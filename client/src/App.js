@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer
+  BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import './App.css';
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 function App() {
   const [metrics, setMetrics] = useState([]);
@@ -31,6 +33,11 @@ function App() {
     fetchMetrics();
   };
 
+  const handleDeleteMetric = async (id) => {
+    await axios.delete(`/api/metrics/${id}`);
+    fetchMetrics();
+  };
+
   // Aggregate data for the chart (sum values by type)
   const chartData = Object.values(
     metrics.reduce((acc, m) => {
@@ -41,7 +48,7 @@ function App() {
   );
 
   return (
-    <div style={{ maxWidth: 800, margin: '2rem auto', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: 1000, margin: '2rem auto', fontFamily: 'sans-serif' }}>
       <h1>Real-Time Analytics Dashboard</h1>
       <form onSubmit={handleAddMetric} style={{ marginBottom: '2rem' }}>
         <input
@@ -62,16 +69,43 @@ function App() {
         />
         <button type="submit">Add Metric</button>
       </form>
-      <h2>Metrics by Type</h2>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="type" />
-          <YAxis />
-          <Tooltip />
-          <Bar dataKey="value" fill="#8884d8" />
-        </BarChart>
-      </ResponsiveContainer>
+      <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
+        <div style={{ flex: 1 }}>
+          <h2>Bar Chart</h2>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="type" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="value" fill="#8884d8" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{ flex: 1 }}>
+          <h2>Pie Chart</h2>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={chartData}
+                dataKey="value"
+                nameKey="type"
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                fill="#8884d8"
+                label
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
       <h2>Latest Metrics (Table)</h2>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
@@ -79,6 +113,7 @@ function App() {
             <th>Type</th>
             <th>Value</th>
             <th>Timestamp</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -87,6 +122,11 @@ function App() {
               <td>{m.type}</td>
               <td>{m.value}</td>
               <td>{new Date(m.timestamp).toLocaleString()}</td>
+              <td>
+                <button onClick={() => handleDeleteMetric(m._id)} style={{ color: 'red' }}>
+                  Delete
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
