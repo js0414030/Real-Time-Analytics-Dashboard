@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer
+} from 'recharts';
 import './App.css';
 
 function App() {
@@ -14,6 +17,9 @@ function App() {
 
   useEffect(() => {
     fetchMetrics();
+    // Poll every 2 seconds for real-time updates
+    const interval = setInterval(fetchMetrics, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleAddMetric = async (e) => {
@@ -25,8 +31,17 @@ function App() {
     fetchMetrics();
   };
 
+  // Aggregate data for the chart (sum values by type)
+  const chartData = Object.values(
+    metrics.reduce((acc, m) => {
+      acc[m.type] = acc[m.type] || { type: m.type, value: 0 };
+      acc[m.type].value += m.value;
+      return acc;
+    }, {})
+  );
+
   return (
-    <div style={{ maxWidth: 600, margin: '2rem auto', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: 800, margin: '2rem auto', fontFamily: 'sans-serif' }}>
       <h1>Real-Time Analytics Dashboard</h1>
       <form onSubmit={handleAddMetric} style={{ marginBottom: '2rem' }}>
         <input
@@ -47,7 +62,17 @@ function App() {
         />
         <button type="submit">Add Metric</button>
       </form>
-      <h2>Latest Metrics</h2>
+      <h2>Metrics by Type</h2>
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="type" />
+          <YAxis />
+          <Tooltip />
+          <Bar dataKey="value" fill="#8884d8" />
+        </BarChart>
+      </ResponsiveContainer>
+      <h2>Latest Metrics (Table)</h2>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
