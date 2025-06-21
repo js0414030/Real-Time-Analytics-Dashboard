@@ -4,5 +4,6 @@ const analyticsController = require('../controllers/analyticsController');
 
 router.post('/', analyticsController.createMetric);
 router.get('/', analyticsController.getMetrics);
+router.delete('/:id', analyticsController.deleteMetric);
 
 module.exports = router; 
